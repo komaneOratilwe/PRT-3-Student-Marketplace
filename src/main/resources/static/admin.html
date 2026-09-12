@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Marketplace - Admin Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .navbar { background: #fff; border-bottom: 1px solid var(--slate-200); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.3rem; font-weight: 800; }
+        .nav-brand span { color: var(--primary); }
+        .admin-container { max-width: 1000px; margin: 2rem auto; padding: 0 1.5rem; }
+        .pending-row { background: #fff; border: 1px solid var(--slate-200); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: 1rem; }
+        .btn-approve { background: var(--primary); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-reject { background: var(--danger); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-outline { border: 1px solid var(--slate-200); padding: 8px 14px; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">Campus<span>Market</span> <span style="font-size: 0.8rem; color: #9333ea; font-weight: 700;">| Administrator</span></div>
+    <button onclick="logout()" class="btn-outline">Log Out</button>
+</nav>
+
+<main class="admin-container">
+    <h2>Moderate Campus Submissions</h2>
+    <p style="color: var(--slate-500); font-size: 0.9rem; margin-bottom: 2rem;">Approve or reject student listings before they appear in public search.</p>
+
+    <div id="pendingListings">Loading submissions...</div>
+</main>
+
+<script>
+    const token = localStorage.getItem("token");
+    const loginAs = localStorage.getItem("loginAs");
+
+    if (!token || loginAs !== "ADMIN") {
+      alert("Administrator credentials required.");
+      window.location.href = "index.html";
+    }
+
+    async function loadPending() {
+      const container = document.getElementById("pendingListings");
+      try {
+        const res = await fetch("http://localhost:8080/api/listings/pending", {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const items = await res.json();
+        container.innerHTML = "";
+
+        if (items.length === 0) {
+          container.innerHTML = `<p style="color: var(--slate-400);">No listings awaiting moderation.</p>`;
+          return;
+        }
+
+        items.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "pending-row";
+          row.innerHTML = `
+            <div>
+              <div style="font-weight: 700; font-size: 1rem;">${item.title} — R${item.price}</div>
+              <div style="font-size: 0.85rem; color: var(--slate-500);">${item.description || 'No description'}</div>
+              <div style="font-size: 0.75rem; color: var(--slate-400); margin-top: 4px;">Seller: ${item.seller?.fullName || 'Student'} (${item.seller?.email}) • WhatsApp: ${item.contactInfo}</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-approve" onclick="reviewListing(${item.id}, 'approve')">Approve</button>
+              <button class="btn-reject" onclick="reviewListing(${item.id}, 'reject')">Reject</button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      } catch (err) {
+        container.textContent = "Failed to load pending queue.";
+      }
+    }
+
+    async function reviewListing(id, action) {
+      try {
+        const res = await fetch(`http://localhost:8080/api/listings/${id}/${action}`, {
+          method: "PUT",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`Action failed`);
+        loadPending();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    loadPending();
+</script>
+</body>
+</html>

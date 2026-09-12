@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Marketplace - Authentication</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="auth-wrapper">
+    <div class="brand-showcase">
+        <div class="showcase-content">
+            <div class="brand-tag">
+                <span class="pulse-dot"></span> Verified Student Trade
+            </div>
+            <h1 class="hero-headline">
+                Campus deals connected via <span class="highlight">WhatsApp</span>.
+            </h1>
+            <p class="hero-subtext">
+                Trade textbooks, study equipment, and student essentials. Verified listings connect buyers and sellers directly.
+            </p>
+            <div class="perks-list">
+                <div class="perk-item">
+                    <div class="perk-icon"><i class="fa-brands fa-whatsapp"></i></div>
+                    <div>
+                        <h4>Direct WhatsApp Link</h4>
+                        <p>No transaction delay; negotiate directly on WhatsApp.</p>
+                    </div>
+                </div>
+                <div class="perk-item">
+                    <div class="perk-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h4>Moderated Catalog</h4>
+                        <p>Every product listing is reviewed before going live.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <div class="form-card">
+            <div class="header-group">
+                <h2 id="formTitle">Welcome back</h2>
+                <p id="formSubtitle">Log in to explore campus deals or manage your listings.</p>
+            </div>
+
+            <div class="tab-pill">
+                <button type="button" id="tabLogin" class="tab-btn active" onclick="switchMode('login')">Sign In</button>
+                <button type="button" id="tabRegister" class="tab-btn" onclick="switchMode('register')">Register</button>
+            </div>
+
+            <div class="role-selector-wrap">
+                <label class="field-label-sm" id="roleLabel">Select Mode</label>
+                <div class="role-cards">
+                    <button type="button" class="role-btn active" data-role="buyer" onclick="selectRole('buyer')">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span class="role-title">Buyer</span>
+                    </button>
+                    <button type="button" class="role-btn" data-role="seller" onclick="selectRole('seller')">
+                        <i class="fa-solid fa-shop"></i>
+                        <span class="role-title">Seller</span>
+                    </button>
+                    <button type="button" class="role-btn" data-role="admin" onclick="selectRole('admin')">
+                        <i class="fa-solid fa-user-shield"></i>
+                        <span class="role-title">Admin</span>
+                    </button>
+                </div>
+                <p id="roleDescription" class="role-tooltip">Find campus deals & chat via WhatsApp</p>
+            </div>
+
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div class="field-group hidden" id="groupFullName">
+                    <label>Full Name</label>
+                    <div class="input-shell">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="fullName" placeholder="e.g. Thabo Student">
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label>Campus Email</label>
+                    <div class="input-shell">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="email" required placeholder="student@institution.ac.za">
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="groupAdminKey">
+                    <label>Admin Passcode</label>
+                    <div class="input-shell">
+                        <i class="fa-solid fa-key"></i>
+                        <input type="password" id="adminSecretKey" placeholder="Enter administrator passcode">
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label>Password</label>
+                    <div class="input-shell">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="password" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                <div class="field-group hidden" id="groupConfirmPassword">
+                    <label>Confirm Password</label>
+                    <div class="input-shell">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="confirmPassword" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="primary-btn">
+                    <span id="submitText">Sign In as BUYER</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+
+            <div id="authAlert" class="alert-box hidden"></div>
+        </div>
+    </div>
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html>
