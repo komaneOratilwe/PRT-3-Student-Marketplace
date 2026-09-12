@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Marketplace - Seller Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .navbar { background: #fff; border-bottom: 1px solid var(--slate-200); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.3rem; font-weight: 800; }
+        .nav-brand span { color: var(--primary); }
+        .dashboard-layout { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 380px 1fr; gap: 2rem; }
+        .listing-form-card { background: #fff; border: 1px solid var(--slate-200); border-radius: 16px; padding: 1.5rem; }
+        .btn-outline { border: 1px solid var(--slate-200); padding: 8px 14px; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 600; }
+        .status-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+        .status-PENDING { background: #fef3c7; color: #92400e; }
+        .status-APPROVED { background: #d1fae5; color: #065f46; }
+        .status-REJECTED { background: #fee2e2; color: #991b1b; }
+        .item-row { background: #fff; border: 1px solid var(--slate-200); border-radius: 12px; padding: 1rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">Campus<span>Market</span> <span style="font-size: 0.8rem; color: var(--slate-500); font-weight: 600;">| Seller Studio</span></div>
+    <div>
+        <a href="marketplace.html" class="btn-outline" style="text-decoration: none; margin-right: 8px;">View Marketplace</a>
+        <button onclick="logout()" class="btn-outline">Log Out</button>
+    </div>
+</nav>
+
+<div class="dashboard-layout">
+    <!-- Left: Add New Listing -->
+    <div class="listing-form-card">
+        <h3 style="margin-bottom: 0.25rem;">Create a Listing</h3>
+        <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 1.25rem;">Direct buyers to your WhatsApp number.</p>
+
+        <form id="createListingForm" onsubmit="handleCreateListing(event)">
+            <div class="field-group">
+                <label>Product Title</label>
+                <div class="input-shell"><input type="text" id="title" required placeholder="e.g. Calculus 3rd Edition"></div>
+            </div>
+
+            <div class="field-group">
+                <label>Price (ZAR)</label>
+                <div class="input-shell"><input type="number" id="price" required step="0.01" placeholder="e.g. 250"></div>
+            </div>
+
+            <div class="field-group">
+                <label>Campus Location</label>
+                <div class="input-shell"><input type="text" id="location" required placeholder="e.g. District Six / Bellville"></div>
+            </div>
+
+            <div class="field-group">
+                <label>WhatsApp Contact Number</label>
+                <div class="input-shell"><input type="tel" id="contactInfo" required placeholder="e.g. 0821234567"></div>
+            </div>
+
+            <div class="field-group">
+                <label>Description</label>
+                <div class="input-shell"><textarea id="description" rows="3" style="width: 100%; border: 1.5px solid var(--slate-200); border-radius: 10px; padding: 10px; font-family: inherit; outline: none;"></textarea></div>
+            </div>
+
+            <div class="field-group">
+                <label>Product Image</label>
+                <input type="file" id="imageFile" accept="image/*">
+            </div>
+
+            <button type="submit" id="saveBtn" class="primary-btn">Submit for Review</button>
+        </form>
+    </div>
+
+    <!-- Right: Manage My Listings -->
+    <div>
+        <h3 style="margin-bottom: 0.25rem;">My Listed Products</h3>
+        <p style="font-size: 0.8rem; color: var(--slate-500); margin-bottom: 1.25rem;">Listings stay PENDING until approved by an admin.</p>
+        <div id="sellerListings">Loading your items...</div>
+    </div>
+</div>
+
+<script>
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const loginAs = localStorage.getItem("loginAs");
+
+    if (!token || loginAs !== "SELLER") {
+      alert("Seller access required. Please log in as a seller.");
+      window.location.href = "index.html";
+    }
+
+    async function loadMyListings() {
+      const container = document.getElementById("sellerListings");
+      try {
+        const res = await fetch(`http://localhost:8080/api/listings/seller/${user.id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const items = await res.json();
+        container.innerHTML = "";
+
+        if (items.length === 0) {
+          container.innerHTML = `<p style="color: var(--slate-400); font-size: 0.9rem;">You haven't listed any products yet.</p>`;
+          return;
+        }
+
+        items.forEach(item => {
+          const row = document.createElement("div");
+          row.className = "item-row";
+          row.innerHTML = `
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem;">${item.title}</div>
+              <div style="color: var(--slate-500); font-size: 0.8rem;">R${item.price} • ${item.location}</div>
+            </div>
+            <span class="status-badge status-${item.status}">${item.status}</span>
+          `;
+          container.appendChild(row);
+        });
+      } catch (err) {
+        container.textContent = "Failed to load seller listings.";
+      }
+    }
+
+    async function handleCreateListing(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Uploading...";
+
+      try {
+        let uploadedImageUrls = [];
+        const fileInput = document.getElementById("imageFile");
+
+        if (fileInput.files.length > 0) {
+          const formData = new FormData();
+          formData.append("file", fileInput.files[0]);
+
+          const uploadRes = await fetch("http://localhost:8080/api/upload", {
+            method: "POST",
+            body: formData
+          });
+          if (!uploadRes.ok) throw new Error("Image upload failed");
+          const imgUrl = await uploadRes.text();
+          uploadedImageUrls.push(imgUrl);
+        }
+
+        const payload = {
+          title: document.getElementById("title").value,
+          description: document.getElementById("description").value,
+          price: parseFloat(document.getElementById("price").value),
+          location: document.getElementById("location").value,
+          contactInfo: document.getElementById("contactInfo").value,
+          imageUrls: uploadedImageUrls
+        };
+
+        const res = await fetch("http://localhost:8080/api/listings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error("Could not save listing");
+
+        alert("Listing submitted! It is now pending admin review.");
+        document.getElementById("createListingForm").reset();
+        loadMyListings();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Submit for Review";
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    loadMyListings();
+</script>
+</body>
+</html>

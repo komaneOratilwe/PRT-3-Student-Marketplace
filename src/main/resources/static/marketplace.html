@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Marketplace - Browse</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .navbar { background: #fff; border-bottom: 1px solid var(--slate-200); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { font-size: 1.3rem; font-weight: 800; }
+        .nav-brand span { color: var(--primary); }
+        .nav-actions { display: flex; align-items: center; gap: 1rem; }
+        .catalog-container { max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem; }
+        .catalog-header { margin-bottom: 2rem; }
+        .grid-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .product-card { background: #fff; border: 1px solid var(--slate-200); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0,0,0,0.08); }
+        .card-img-box { width: 100%; height: 180px; background: var(--slate-100); display: flex; align-items: center; justify-content: center; }
+        .card-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .card-body { padding: 1.25rem; flex: 1; display: flex; flex-direction: column; }
+        .badge-loc { font-size: 0.75rem; color: var(--slate-500); display: inline-flex; align-items: center; gap: 4px; margin-bottom: 0.5rem; }
+        .product-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.35rem; }
+        .product-desc { font-size: 0.85rem; color: var(--slate-500); margin-bottom: 1rem; flex: 1; }
+        .price-tag { font-size: 1.25rem; font-weight: 800; color: var(--slate-900); margin-bottom: 1rem; }
+        .btn-wa { background: #25d366; color: #fff; padding: 10px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+        .btn-wa:hover { background: #1eb956; }
+        .btn-outline { border: 1px solid var(--slate-200); padding: 8px 14px; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand">Campus<span>Market</span></div>
+    <div class="nav-actions">
+        <span id="userGreeting" style="font-size: 0.9rem; font-weight: 600;"></span>
+        <button onclick="logout()" class="btn-outline">Log Out</button>
+    </div>
+</nav>
+
+<main class="catalog-container">
+    <div class="catalog-header">
+        <h2>Campus Listings</h2>
+        <p style="color: var(--slate-500); font-size: 0.9rem;">Browse verified student items and chat directly on WhatsApp.</p>
+    </div>
+
+    <div id="loading" style="text-align: center; color: var(--slate-400);">Loading listings...</div>
+    <div id="gridFeed" class="grid-feed"></div>
+</main>
+
+<script>
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    document.getElementById("userGreeting").textContent = user.fullName ? `Hi, ${user.fullName}` : "";
+
+    async function loadListings() {
+      try {
+        const res = await fetch("http://localhost:8080/api/listings");
+        const listings = await res.json();
+
+        document.getElementById("loading").style.display = "none";
+        const grid = document.getElementById("gridFeed");
+        grid.innerHTML = "";
+
+        if (listings.length === 0) {
+          grid.innerHTML = `<p style="color: var(--slate-400); grid-column: 1/-1;">No approved listings available right now.</p>`;
+          return;
+        }
+
+        listings.forEach(item => {
+          const cleanPhone = (item.contactInfo || "").replace(/[^0-9]/g, "");
+          const waMsg = encodeURIComponent(`Hi ${item.seller?.fullName || 'Seller'}, I am interested in your "${item.title}" listed for R${item.price} on CampusMarket.`);
+          const waLink = `https://wa.me/${cleanPhone}?text=${waMsg}`;
+          const imgUrl = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : "";
+
+          const card = document.createElement("div");
+          card.className = "product-card";
+          card.innerHTML = `
+            <div class="card-img-box">
+              ${imgUrl ? `<img src="${imgUrl}" alt="${item.title}">` : `<i class="fa-solid fa-image" style="font-size: 2rem; color: #cbd5e1;"></i>`}
+            </div>
+            <div class="card-body">
+              <span class="badge-loc"><i class="fa-solid fa-location-dot"></i> ${item.location || 'Campus'}</span>
+              <h3 class="product-title">${item.title}</h3>
+              <p class="product-desc">${item.description || 'No description provided.'}</p>
+              <div class="price-tag">R ${item.price}</div>
+              <a href="${waLink}" target="_blank" class="btn-wa">
+                <i class="fa-brands fa-whatsapp"></i> Chat with Seller
+              </a>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        document.getElementById("loading").textContent = "Failed to load listings. Check if backend is active.";
+      }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    loadListings();
+</script>
+</body>
+</html>
